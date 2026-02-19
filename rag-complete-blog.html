@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG: The Future of AI Knowledge — Retrieval-Augmented Generation Deep Dive</title>
+<meta name="description" content="A complete technical guide to Retrieval-Augmented Generation (RAG) — architecture, use cases, LLM integration, and real-world examples explained.">
+<meta property="og:title" content="RAG: The Future of AI Knowledge">
+<meta property="og:description" content="How Retrieval-Augmented Generation is transforming AI systems with real-time, accurate, grounded answers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f1eb;
+    --cream: #faf8f4;
+    --accent: #c8421a;
+    --accent2: #1a4fc8;
+    --accent3: #1a8c5a;
+    --muted: #6b6560;
+    --border: #d8d2c8;
+    --code-bg: #1a1a2e;
+    --gold: #c89b1a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.8;
+    font-size: 17px;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  .masthead {
+    background: var(--ink);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--accent);
+  }
+  .masthead-brand {
+    font-family: 'Playfair Display', serif;
+    color: var(--paper);
+    font-size: 1.2rem;
+    letter-spacing: 0.04em;
+  }
+  .masthead-nav a {
+    color: var(--border);
+    text-decoration: none;
+    margin-left: 28px;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .masthead-nav a:hover { color: var(--accent); }
+
+  /* ─── HERO ─── */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 100px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 40%, rgba(200,66,26,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 10% 80%, rgba(26,79,200,0.15) 0%, transparent 50%);
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,66,26,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,66,26,0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .hero-category {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    margin-bottom: 30px;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.08;
+    margin-bottom: 28px;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero-lead {
+    font-size: 1.18rem;
+    color: rgba(245,241,235,0.78);
+    max-width: 640px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    font-size: 0.82rem;
+    color: var(--border);
+    flex-wrap: wrap;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+  .hero-meta .dot { color: var(--accent); font-size: 1.2em; }
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-top: 60px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .hero-stat {
+    padding: 22px 28px;
+    background: rgba(255,255,255,0.03);
+  }
+  .hero-stat .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+  }
+  .hero-stat .label {
+    font-size: 0.78rem;
+    color: var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── LAYOUT ─── */
+  .article-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 60px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .article-wrap { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+
+  /* ─── ARTICLE BODY ─── */
+  .article-body { padding: 64px 0; }
+
+  .article-body p {
+    margin-bottom: 1.5rem;
+    color: #2a2520;
+  }
+
+  /* ─── SECTION HEADINGS ─── */
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 8px;
+    margin-top: 64px;
+  }
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 24px;
+    color: var(--ink);
+  }
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 40px 0 14px;
+    color: var(--ink);
+  }
+
+  /* ─── PULL QUOTE ─── */
+  .pullquote {
+    border-left: 5px solid var(--accent);
+    margin: 40px 0;
+    padding: 24px 32px;
+    background: var(--paper);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.28rem;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .pullquote cite {
+    display: block;
+    font-style: normal;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ─── ARCHITECTURE DIAGRAM ─── */
+  .arch-diagram {
+    background: var(--ink);
+    border-radius: 4px;
+    padding: 48px 32px;
+    margin: 44px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .arch-diagram::before {
+    content: 'ARCHITECTURE OVERVIEW';
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: center;
+    flex-wrap: nowrap;
+    min-width: 600px;
+  }
+  .arch-node {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    padding: 16px 18px;
+    text-align: center;
+    min-width: 110px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .arch-node .icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+  .arch-node .node-label {
+    font-size: 0.72rem;
+    color: rgba(245,241,235,0.9);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: block;
+  }
+  .arch-node .node-sub {
+    font-size: 0.62rem;
+    color: rgba(245,241,235,0.45);
+    margin-top: 4px;
+    display: block;
+  }
+  .arch-node.highlight { border-color: var(--accent); background: rgba(200,66,26,0.15); }
+  .arch-node.highlight2 { border-color: var(--accent2); background: rgba(26,79,200,0.15); }
+  .arch-arrow {
+    color: var(--accent);
+    font-size: 1.4rem;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+  .arch-row2 {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: center;
+    margin-top: 24px;
+    flex-wrap: nowrap;
+    min-width: 600px;
+  }
+
+  /* ─── FEATURE CARDS ─── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 36px 0;
+  }
+  .feature-card {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    padding: 28px 24px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .feature-card:nth-child(1)::before { background: var(--accent); }
+  .feature-card:nth-child(2)::before { background: var(--accent2); }
+  .feature-card:nth-child(3)::before { background: var(--accent3); }
+  .feature-card:nth-child(4)::before { background: var(--gold); }
+  .feature-card:nth-child(5)::before { background: #8b1ac8; }
+  .feature-card:nth-child(6)::before { background: var(--accent); }
+  .feature-icon { font-size: 2rem; margin-bottom: 14px; display: block; }
+  .feature-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature-desc { font-size: 0.87rem; color: var(--muted); line-height: 1.6; }
+
+  /* ─── USE CASE CARDS ─── */
+  .usecase-list { display: flex; flex-direction: column; gap: 24px; margin: 36px 0; }
+  .usecase-card {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 24px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    padding: 28px;
+    align-items: start;
+    transition: box-shadow 0.2s;
+  }
+  .usecase-card:hover { box-shadow: 6px 6px 0 var(--accent); }
+  .usecase-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--border);
+    line-height: 1;
+  }
+  .usecase-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .usecase-example {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--cream);
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    margin-top: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── CODE BLOCK ─── */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 28px;
+    margin: 28px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .code-label {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    font-family: 'DM Mono', monospace;
+  }
+  .code-block pre {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #e2e8f0;
+  }
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+  .type { color: #ffcb6b; }
+
+  /* ─── COMPARISON TABLE ─── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 0.9rem;
+  }
+  .compare-table th {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 18px;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .compare-table th:first-child { width: 200px; }
+  .compare-table td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .compare-table tr:nth-child(even) td { background: var(--paper); }
+  .compare-table td:first-child { font-weight: 600; }
+  .check { color: var(--accent3); font-size: 1.1em; }
+  .cross { color: #c8421a; font-size: 1.1em; }
+  .partial { color: var(--gold); font-size: 1.1em; }
+
+  /* ─── VIDEO PLACEHOLDER ─── */
+  .video-embed {
+    background: var(--ink);
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 40px 0;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .video-embed::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(200,66,26,0.2) 0%, transparent 70%);
+  }
+  .video-inner { text-align: center; position: relative; z-index: 1; }
+  .play-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    transition: transform 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  .video-embed:hover .play-btn { transform: scale(1.1); background: #e05525; }
+  .play-btn::after {
+    content: '';
+    border: 0;
+    border-top: 16px solid transparent;
+    border-bottom: 16px solid transparent;
+    border-left: 26px solid white;
+    margin-left: 6px;
+  }
+  .video-title { color: rgba(255,255,255,0.9); font-size: 1.05rem; font-weight: 500; }
+  .video-sub { color: rgba(255,255,255,0.4); font-size: 0.82rem; margin-top: 6px; }
+  .video-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--border);
+  }
+  .video-tab {
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .video-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .video-content { display: none; }
+  .video-content.active { display: block; }
+
+  /* ─── HIGHLIGHT BOX ─── */
+  .highlight-box {
+    background: linear-gradient(135deg, var(--ink) 0%, #1a1a2e 100%);
+    color: var(--paper);
+    padding: 40px;
+    margin: 44px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .highlight-box::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(200,66,26,0.12);
+  }
+  .highlight-box h3 {
+    color: var(--accent);
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 14px;
+    margin-top: 0;
+    font-size: 1.25rem;
+  }
+  .highlight-box p { color: rgba(245,241,235,0.82); margin-bottom: 0; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar { padding: 64px 0; }
+  .sidebar-widget {
+    border: 1px solid var(--border);
+    margin-bottom: 28px;
+    background: var(--paper);
+  }
+  .sidebar-widget-title {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 18px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .sidebar-widget-body { padding: 20px 18px; }
+  .toc-list { list-style: none; }
+  .toc-list li { margin-bottom: 10px; }
+  .toc-list a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toc-list a::before { content: '→'; color: var(--accent); font-size: 0.9em; }
+  .toc-list a:hover { color: var(--ink); }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    font-size: 0.74rem;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tag:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ─── STEP FLOW ─── */
+  .steps { counter-reset: steps; margin: 36px 0; }
+  .step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+    align-items: start;
+  }
+  .step-num {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-content h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+  }
+  .step-content p { font-size: 0.9rem; color: var(--muted); margin-bottom: 0; }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 56px 0;
+    color: var(--border);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--ink);
+    color: rgba(245,241,235,0.5);
+    text-align: center;
+    padding: 40px;
+    font-size: 0.82rem;
+    margin-top: 60px;
+    border-top: 3px solid var(--accent);
+  }
+  footer strong { color: var(--paper); }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero-inner > * {
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero-inner > *:nth-child(1) { animation-delay: 0.1s; }
+  .hero-inner > *:nth-child(2) { animation-delay: 0.22s; }
+  .hero-inner > *:nth-child(3) { animation-delay: 0.34s; }
+  .hero-inner > *:nth-child(4) { animation-delay: 0.46s; }
+  .hero-inner > *:nth-child(5) { animation-delay: 0.58s; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 640px) {
+    .masthead { padding: 14px 20px; }
+    .hero { padding: 60px 20px 50px; }
+    .article-wrap { padding: 0 16px; }
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .arch-flow, .arch-row2 { min-width: 400px; }
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    .masthead, footer { display: none; }
+    .article-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-brand">AI/ML Technical Review</div>
+  <nav class="masthead-nav">
+    <a href="#what-is-rag">What is RAG</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#use-cases">Use Cases</a>
+    <a href="#demo">Demo</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <span class="hero-category">Deep Dive · Generative AI</span>
+    <h1>Retrieval-Augmented<br><em>Generation</em><br>The Intelligence Upgrade Your LLM Needs</h1>
+    <p class="hero-lead">How combining real-time retrieval with large language models creates AI systems that are grounded, accurate, current, and enterprise-ready — without the hallucinations.</p>
+    <div class="hero-meta">
+      <span>📅 2025 Edition</span>
+      <span class="dot">•</span>
+      <span>⏱ 18 min read</span>
+      <span class="dot">•</span>
+      <span>🎯 Engineers · Researchers · Decision Makers</span>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="num">40%</span>
+        <span class="label">Reduction in AI hallucinations with RAG</span>
+      </div>
+      <div class="hero-stat">
+        <span class="num">3×</span>
+        <span class="label">Faster enterprise AI deployment cycles</span>
+      </div>
+      <div class="hero-stat">
+        <span class="num">$4B+</span>
+        <span class="label">Market size projected by 2030</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARTICLE -->
+<div class="article-wrap">
+  <main class="article-body">
+
+    <!-- SECTION 1 -->
+    <span class="section-label" id="what-is-rag">01 — Foundation</span>
+    <h2>What is Retrieval-Augmented Generation?</h2>
+
+    <p>Imagine asking a brilliant expert a question — but that expert was trained in 2023 and has been locked in a room since then, with no access to new books, news, or company data. That's a standard Large Language Model (LLM). Now imagine giving that same expert a live internet connection, your entire company knowledge base, and a supercharged search engine in real-time. That's <strong>Retrieval-Augmented Generation (RAG)</strong>.</p>
+
+    <p>RAG is an AI architecture pattern introduced by researchers at Meta in 2020 that <em>augments</em> the generation capabilities of language models with a retrieval system that fetches relevant, up-to-date information before generating a response. Instead of relying solely on what's baked into model weights, RAG grounds every answer in actual, verifiable source documents.</p>
+
+    <div class="pullquote">
+      "RAG enables language models to consult external knowledge at inference time — transforming them from static encyclopedias into dynamic, continuously-informed reasoning engines."
+      <cite>— Meta AI Research, "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", 2020</cite>
+    </div>
+
+    <p>The core insight is elegant: rather than training a model on all possible knowledge (which becomes outdated and expensive), we keep the model's reasoning capabilities separate from the knowledge it references. This separation of concerns is what makes RAG both powerful and practical for production systems.</p>
+
+    <h3>The Problem RAG Solves</h3>
+    <p>Standard LLMs suffer from three fundamental limitations that RAG directly addresses:</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🧠</span>
+        <div class="feature-title">Knowledge Cutoff</div>
+        <div class="feature-desc">LLMs only know what they were trained on. RAG gives them access to current, live information from any data source.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌀</span>
+        <div class="feature-title">Hallucination</div>
+        <div class="feature-desc">Models fabricate plausible-sounding but false facts. RAG anchors responses to retrieved, verifiable source documents.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <div class="feature-title">Private Data Access</div>
+        <div class="feature-desc">LLMs can't access proprietary databases, internal wikis, or confidential documents. RAG bridges this gap securely.</div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="divider">CORE ARCHITECTURE</div>
+    <span class="section-label" id="architecture">02 — How It Works</span>
+    <h2>The RAG Architecture, Explained</h2>
+
+    <p>RAG operates through a tightly coordinated pipeline of four key phases. Understanding each phase is essential to building or evaluating RAG systems in production.</p>
+
+    <!-- ARCHITECTURE DIAGRAM -->
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-node">
+          <span class="icon">👤</span>
+          <span class="node-label">User Query</span>
+          <span class="node-sub">Natural language input</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node highlight2">
+          <span class="icon">🔢</span>
+          <span class="node-label">Embedding</span>
+          <span class="node-sub">Query → Vector</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node highlight">
+          <span class="icon">🔍</span>
+          <span class="node-label">Retriever</span>
+          <span class="node-sub">Vector DB Search</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+          <span class="icon">📄</span>
+          <span class="node-label">Top-K Docs</span>
+          <span class="node-sub">Relevant chunks</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node highlight2">
+          <span class="icon">🤖</span>
+          <span class="node-label">LLM Generator</span>
+          <span class="node-sub">Context + Query</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node highlight">
+          <span class="icon">✅</span>
+          <span class="node-label">Grounded Answer</span>
+          <span class="node-sub">Cited response</span>
+        </div>
+      </div>
+      <div class="arch-row2" style="margin-top:32px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); justify-content:center; gap:40px; flex-wrap:wrap; min-width:0;">
+        <div style="text-align:center;">
+          <div style="font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(200,66,26,0.9); font-weight:600; margin-bottom:8px;">KNOWLEDGE BASE (Offline)</div>
+          <div style="display:flex; gap:8px; align-items:center; justify-content:center; color:rgba(245,241,235,0.5); font-size:0.75rem;">
+            <span style="border:1px solid rgba(255,255,255,0.15); padding:5px 10px; border-radius:2px;">📚 Documents</span>
+            <span style="color:rgba(200,66,26,0.7)">→</span>
+            <span style="border:1px solid rgba(255,255,255,0.15); padding:5px 10px; border-radius:2px;">✂️ Chunking</span>
+            <span style="color:rgba(200,66,26,0.7)">→</span>
+            <span style="border:1px solid rgba(255,255,255,0.15); padding:5px 10px; border-radius:2px;">🔢 Embeddings</span>
+            <span style="color:rgba(200,66,26,0.7)">→</span>
+            <span style="border:1px solid rgba(26,79,200,0.8); padding:5px 10px; border-radius:2px; border-color: rgba(26,79,200,0.6);">🗄️ Vector DB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEPS -->
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Ingestion & Indexing (Offline)</h4>
+          <p>Source documents (PDFs, databases, websites, internal wikis) are ingested, split into semantic chunks, and converted to dense vector embeddings using an embedding model. These vectors are stored in a vector database (Pinecone, Weaviate, pgvector, Chroma, etc.).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Query Embedding</h4>
+          <p>When a user asks a question, it's converted into a vector using the same embedding model. This creates a mathematical representation of the query's semantic meaning in the same vector space as the indexed documents.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Semantic Retrieval</h4>
+          <p>The query vector is used to perform approximate nearest-neighbor (ANN) search against the vector index. The top-K most semantically similar document chunks are retrieved — these are the most relevant pieces of knowledge for the query.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Augmented Generation</h4>
+          <p>The retrieved chunks are injected into the LLM's prompt as context, alongside the original user query. The LLM generates a response that synthesizes both its trained knowledge and the retrieved, grounded context — citing sources, avoiding hallucination.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CODE EXAMPLE -->
+    <h3>RAG in Code: A Minimal Python Example</h3>
+    <div class="code-block">
+      <span class="code-label">Python / LangChain</span>
+      <pre>
+<span class="kw">from</span> langchain_community.<span class="fn">vectorstores</span> <span class="kw">import</span> Chroma
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> OpenAIEmbeddings, ChatOpenAI
+<span class="kw">from</span> langchain.chains <span class="kw">import</span> RetrievalQA
+<span class="kw">from</span> langchain_community.document_loaders <span class="kw">import</span> PyPDFLoader
+
+<span class="cm"># Step 1: Load and index your documents</span>
+loader = <span class="fn">PyPDFLoader</span>(<span class="str">"company_knowledge_base.pdf"</span>)
+docs = loader.<span class="fn">load_and_split</span>()
+
+embeddings = <span class="fn">OpenAIEmbeddings</span>(model=<span class="str">"text-embedding-3-large"</span>)
+vectorstore = Chroma.<span class="fn">from_documents</span>(docs, embeddings)
+
+<span class="cm"># Step 2: Configure retriever</span>
+retriever = vectorstore.<span class="fn">as_retriever</span>(
+    search_type=<span class="str">"mmr"</span>,          <span class="cm"># Max Marginal Relevance</span>
+    search_kwargs={<span class="str">"k"</span>: <span class="num">5</span>}       <span class="cm"># Top 5 relevant chunks</span>
+)
+
+<span class="cm"># Step 3: Create RAG chain</span>
+llm = <span class="fn">ChatOpenAI</span>(model=<span class="str">"gpt-4o"</span>, temperature=<span class="num">0</span>)
+rag_chain = RetrievalQA.<span class="fn">from_chain_type</span>(
+    llm=llm,
+    chain_type=<span class="str">"stuff"</span>,
+    retriever=retriever,
+    return_source_documents=<span class="type">True</span>
+)
+
+<span class="cm"># Step 4: Query with grounded context</span>
+response = rag_chain.<span class="fn">invoke</span>({
+    <span class="str">"query"</span>: <span class="str">"What is our Q3 2024 revenue target?"</span>
+})
+<span class="fn">print</span>(response[<span class="str">"result"</span>])         <span class="cm"># Grounded answer</span>
+<span class="fn">print</span>(response[<span class="str">"source_documents"</span>]) <span class="cm"># Cited sources</span>
+      </pre>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="divider">KEY FEATURES</div>
+    <span class="section-label">03 — What Makes RAG Powerful</span>
+    <h2>Key Features of RAG Systems</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📡</span>
+        <div class="feature-title">Real-Time Knowledge</div>
+        <div class="feature-desc">RAG retrieves from live, updatable knowledge bases. Your AI always has the latest information without retraining the model.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔗</span>
+        <div class="feature-title">Source Attribution</div>
+        <div class="feature-desc">Every claim can be traced to a source document. Users can verify answers, building trust and enabling compliance workflows.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">💡</span>
+        <div class="feature-title">Domain Specialization</div>
+        <div class="feature-desc">By pointing retrieval at domain-specific corpora, RAG transforms a general-purpose LLM into a vertical-specialized expert system.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">💰</span>
+        <div class="feature-title">Cost Efficiency</div>
+        <div class="feature-desc">Updating knowledge costs only a re-indexing operation, not a full model fine-tune or retraining cycle — typically 100× cheaper.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔐</span>
+        <div class="feature-title">Data Privacy Control</div>
+        <div class="feature-desc">Sensitive documents stay in your private vector store. You control what the model can and cannot access at query time.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Scalable Architecture</div>
+        <div class="feature-desc">Retrieval and generation components scale independently. Swap embedding models, vector DBs, or LLMs without rebuilding the pipeline.</div>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <h3>RAG vs Fine-Tuning vs Base LLM</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Base LLM</th>
+          <th>Fine-Tuned LLM</th>
+          <th>RAG</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Up-to-date knowledge</td>
+          <td><span class="cross">✗</span> Cutoff date</td>
+          <td><span class="cross">✗</span> Cutoff date</td>
+          <td><span class="check">✓</span> Real-time</td>
+        </tr>
+        <tr>
+          <td>Private data access</td>
+          <td><span class="cross">✗</span> None</td>
+          <td><span class="partial">~</span> At training</td>
+          <td><span class="check">✓</span> At query time</td>
+        </tr>
+        <tr>
+          <td>Source citation</td>
+          <td><span class="cross">✗</span> Unsupported</td>
+          <td><span class="cross">✗</span> Unsupported</td>
+          <td><span class="check">✓</span> Native</td>
+        </tr>
+        <tr>
+          <td>Update cost</td>
+          <td><span class="cross">✗</span> Full retrain</td>
+          <td><span class="partial">~</span> Fine-tune runs</td>
+          <td><span class="check">✓</span> Re-index only</td>
+        </tr>
+        <tr>
+          <td>Hallucination risk</td>
+          <td><span class="cross">✗</span> High</td>
+          <td><span class="partial">~</span> Medium</td>
+          <td><span class="check">✓</span> Low (grounded)</td>
+        </tr>
+        <tr>
+          <td>Style/persona learning</td>
+          <td><span class="partial">~</span> Generic</td>
+          <td><span class="check">✓</span> Excellent</td>
+          <td><span class="partial">~</span> Via prompting</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SECTION 4 -->
+    <div class="divider">REAL-WORLD APPLICATIONS</div>
+    <span class="section-label" id="use-cases">04 — Use Cases & Examples</span>
+    <h2>Where RAG is Transforming Industries</h2>
+
+    <div class="usecase-list">
+      <div class="usecase-card">
+        <div class="usecase-num">01</div>
+        <div>
+          <div class="usecase-title">Enterprise Knowledge Management & Internal Q&A</div>
+          <p>Companies deploy RAG to turn thousands of policy documents, SOPs, HR manuals, and wiki pages into a conversational assistant. Employees ask questions in natural language and receive precise, cited answers instead of drowning in search results.</p>
+          <span class="usecase-example">Example: Notion AI, Confluence AI, SharePoint Copilot</span>
+        </div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-num">02</div>
+        <div>
+          <div class="usecase-title">Customer Support & Intelligent Help Desks</div>
+          <p>RAG-powered chatbots retrieve answers from product documentation, FAQs, and ticket histories to resolve customer queries accurately. Unlike scripted bots, RAG systems handle novel questions by combining retrieval with generative reasoning.</p>
+          <span class="usecase-example">Example: Salesforce Einstein, Intercom Fin, Zendesk AI</span>
+        </div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-num">03</div>
+        <div>
+          <div class="usecase-title">Legal & Compliance Intelligence</div>
+          <p>Law firms and compliance teams use RAG to query vast repositories of case law, regulatory filings, and contracts. The system surfaces relevant precedents and statutes, while the LLM synthesizes findings with legal reasoning — always citing the source document.</p>
+          <span class="usecase-example">Example: Harvey AI, LexisNexis Lexis+ AI, Thomson Reuters CoCounsel</span>
+        </div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-num">04</div>
+        <div>
+          <div class="usecase-title">Medical & Clinical Decision Support</div>
+          <p>Healthcare organizations index clinical guidelines, research papers, and patient records into RAG systems that help clinicians access relevant protocols, drug interaction data, and evidence-based treatment options at the point of care.</p>
+          <span class="usecase-example">Example: Microsoft DAX Copilot, Nuance, Epic Systems AI</span>
+        </div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-num">05</div>
+        <div>
+          <div class="usecase-title">Financial Research & Analysis</div>
+          <p>Asset managers and analysts deploy RAG over earnings transcripts, SEC filings, market reports, and news feeds. The system can synthesize multi-source financial intelligence, track company developments over time, and answer quantitative queries.</p>
+          <span class="usecase-example">Example: Bloomberg AI, Morgan Stanley AI @ Morgan Stanley, Kensho</span>
+        </div>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-num">06</div>
+        <div>
+          <div class="usecase-title">Code Assistance & Developer Tooling</div>
+          <p>Developer tools index internal codebases, API documentation, and issue trackers. RAG enables AI assistants to suggest fixes, explain unfamiliar code, generate implementations using internal libraries, and retrieve relevant PRs — all grounded in your actual codebase.</p>
+          <span class="usecase-example">Example: GitHub Copilot Enterprise, Cursor, Codeium</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="divider">RAG + LLMs</div>
+    <span class="section-label">05 — RAG with Large Language Models</span>
+    <h2>Why RAG + LLMs is the Winning Combination</h2>
+
+    <p>RAG and LLMs are architecturally complementary. LLMs are exceptional at reasoning, synthesis, and language — but they struggle with factual accuracy over time. RAG provides the factual grounding. Together, they form systems that are greater than the sum of their parts.</p>
+
+    <div class="highlight-box">
+      <h3>The Synergy Explained</h3>
+      <p>Think of the LLM as the reasoning engine — it understands intent, synthesizes information, and generates fluent, coherent language. RAG is the information retrieval system — it knows where to look and what to surface. When the LLM is given retrieved context, it doesn't need to "remember" facts; it needs to <em>reason over them</em>. This is precisely what LLMs do best. The result: systems that are simultaneously more accurate, more current, and more explainable than either component alone.</p>
+    </div>
+
+    <h3>Advanced RAG Patterns</h3>
+    <p>Production RAG systems go beyond the basic retrieval-generate loop. Here are the advanced patterns used at enterprise scale:</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🔄</span>
+        <div class="feature-title">Agentic RAG</div>
+        <div class="feature-desc">The LLM decides when and how to retrieve, issues multiple retrieval calls, and refines its queries iteratively based on intermediate results. Best for complex, multi-hop questions.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌐</span>
+        <div class="feature-title">Hybrid Search RAG</div>
+        <div class="feature-desc">Combines dense vector search (semantic similarity) with sparse keyword search (BM25). Captures both conceptual meaning and exact keyword matches for higher recall.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🗂️</span>
+        <div class="feature-title">Graph RAG</div>
+        <div class="feature-desc">Indexes documents as knowledge graphs (entities + relationships). Enables multi-hop reasoning across connected facts — ideal for complex domain knowledge like medicine and law.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔁</span>
+        <div class="feature-title">Self-RAG</div>
+        <div class="feature-desc">The LLM critiques its own outputs and decides whether to retrieve additional information mid-generation. Improves factuality and reduces unnecessary retrieval overhead.</div>
+      </div>
+    </div>
+
+    <!-- DEMO VIDEO SECTION -->
+    <div class="divider">LIVE DEMO</div>
+    <span class="section-label" id="demo">06 — Demo & Walkthrough</span>
+    <h2>See RAG in Action</h2>
+
+    <div class="video-tabs">
+      <button class="video-tab active" onclick="switchTab('overview')">System Overview</button>
+      <button class="video-tab" onclick="switchTab('enterprise')">Enterprise Demo</button>
+      <button class="video-tab" onclick="switchTab('code')">Code Walkthrough</button>
+    </div>
+
+    <div class="video-content active" id="tab-overview">
+      <div class="video-embed" onclick="openVideo('https://www.youtube.com/results?search_query=RAG+retrieval+augmented+generation+explained')">
+        <div class="video-inner">
+          <div class="play-btn"></div>
+          <div class="video-title">RAG: How Retrieval-Augmented Generation Works</div>
+          <div class="video-sub">15:42 · System Architecture Deep Dive</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-content" id="tab-enterprise">
+      <div class="video-embed" onclick="openVideo('https://www.youtube.com/results?search_query=RAG+enterprise+AI+demo+knowledge+base')">
+        <div class="video-inner">
+          <div class="play-btn"></div>
+          <div class="video-title">Building Enterprise RAG: From Docs to Production</div>
+          <div class="video-sub">22:18 · Real-world deployment walkthrough</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-content" id="tab-code">
+      <div class="video-embed" onclick="openVideo('https://www.youtube.com/results?search_query=RAG+langchain+python+tutorial+2024')">
+        <div class="video-inner">
+          <div class="play-btn"></div>
+          <div class="video-title">Build a RAG System from Scratch with LangChain</div>
+          <div class="video-sub">34:05 · Full Python implementation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERACTIVE DEMO -->
+    <div style="background: var(--paper); border: 1px solid var(--border); padding: 32px; margin: 32px 0;">
+      <h3 style="margin-top: 0; font-size: 1.1rem; margin-bottom: 16px;">🧪 Interactive RAG Concept Demo</h3>
+      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 20px;">See how a RAG system processes a query step by step. Type a sample query below.</p>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input id="demo-input" type="text" value="What is the Q3 revenue target?" placeholder="Ask something..."
+          style="flex: 1; min-width: 200px; padding: 12px 16px; border: 1px solid var(--border); background: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none;">
+        <button onclick="runDemo()" style="padding: 12px 28px; background: var(--accent); color: #fff; border: none; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; letter-spacing: 0.04em; white-space: nowrap;">
+          Run RAG Pipeline →
+        </button>
+      </div>
+      <div id="demo-output" style="display: none;">
+        <div id="demo-steps" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 6 -->
+    <div class="divider">EVALUATION & BEST PRACTICES</div>
+    <span class="section-label">07 — Metrics & Quality</span>
+    <h2>Measuring RAG System Quality</h2>
+
+    <p>Production RAG systems require rigorous evaluation beyond simple accuracy metrics. The RAGAS (Retrieval-Augmented Generation Assessment) framework defines four core dimensions:</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-title">Faithfulness</div>
+        <div class="feature-desc">Are all claims in the answer supported by the retrieved context? Measures hallucination rate at the claim level.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">Answer Relevance</div>
+        <div class="feature-desc">Does the generated answer actually address the user's question, without unnecessary padding or tangential content?</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📌</span>
+        <div class="feature-title">Context Precision</div>
+        <div class="feature-desc">What proportion of the retrieved context is actually relevant to the question? Measures retrieval efficiency.</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔁</span>
+        <div class="feature-title">Context Recall</div>
+        <div class="feature-desc">Did the retrieval system find all the relevant information? Measures retrieval completeness — what was missed?</div>
+      </div>
+    </div>
+
+    <!-- SECTION 7 -->
+    <div class="divider">THE FUTURE</div>
+    <span class="section-label">08 — What's Next for RAG</span>
+    <h2>The Evolving Landscape of RAG</h2>
+
+    <p>RAG is not a static technology. As language models grow more capable and retrieval infrastructure matures, the architecture is rapidly evolving in several exciting directions:</p>
+
+    <p><strong>Multimodal RAG</strong> extends retrieval beyond text to include images, videos, audio, and structured data. A medical RAG system might retrieve both clinical notes and X-ray images simultaneously to ground a diagnostic response.</p>
+
+    <p><strong>Long-Context RAG</strong> leverages models with million-token context windows to ingest entire documents at inference time, blurring the line between retrieval and generation. Projects like Google's Gemini Ultra with 10M context challenge the traditional chunk-retrieve paradigm.</p>
+
+    <p><strong>Streaming RAG</strong> enables real-time retrieval over live data streams — stock tickers, sensor data, social media feeds — enabling AI systems that respond to the present moment with sub-second latency.</p>
+
+    <p><strong>Personalized RAG</strong> adapts retrieval based on individual user context, preferences, and history. The same query from different users triggers different retrieval paths, personalizing responses without compromising privacy.</p>
+
+    <div class="pullquote">
+      "We are moving from AI that was trained on the past to AI that reasons about the present. RAG is the architecture making that transition possible at enterprise scale."
+      <cite>— Industry Perspective, 2025</cite>
+    </div>
+
+    <!-- CLOSING -->
+    <div class="divider">CONCLUSION</div>
+
+    <h2>Getting Started with RAG Today</h2>
+    <p>RAG has moved from research prototype to production staple in just a few years. If you're building AI-powered products or integrating LLMs into enterprise workflows, RAG is no longer optional — it's the baseline for building systems that are accurate, trustworthy, and continuously current.</p>
+    <p>Start with a focused use case: an internal Q&A system, a customer support bot, or a document analysis tool. Choose an embedding model, spin up a vector database, wire in your LLM of choice, and iterate on retrieval quality with RAGAS metrics. The ecosystem is mature, the tooling is excellent, and the value is immediate.</p>
+
+    <div class="highlight-box">
+      <h3>🚀 Quick Start Resources</h3>
+      <p>
+        <strong>Frameworks:</strong> LangChain, LlamaIndex, Haystack, DSPy<br>
+        <strong>Vector Databases:</strong> Pinecone, Weaviate, Chroma, pgvector, Qdrant<br>
+        <strong>Embedding Models:</strong> OpenAI text-embedding-3-large, Cohere embed-v3, BGE-M3, E5<br>
+        <strong>LLMs:</strong> GPT-4o, Claude 3.5, Gemini 1.5 Pro, Llama 3.1, Mistral<br>
+        <strong>Evaluation:</strong> RAGAS, TruLens, UpTrain, DeepEval
+      </p>
+    </div>
+
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">Table of Contents</div>
+      <div class="sidebar-widget-body">
+        <ul class="toc-list">
+          <li><a href="#what-is-rag">What is RAG?</a></li>
+          <li><a href="#architecture">Architecture Deep Dive</a></li>
+          <li><a href="#use-cases">Use Cases & Examples</a></li>
+          <li><a href="#demo">Demo & Walkthrough</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">Key Concepts</div>
+      <div class="sidebar-widget-body">
+        <div class="tag-cloud">
+          <span class="tag">Embeddings</span>
+          <span class="tag">Vector DB</span>
+          <span class="tag">Chunking</span>
+          <span class="tag">LLM</span>
+          <span class="tag">Semantic Search</span>
+          <span class="tag">RAGAS</span>
+          <span class="tag">Agentic RAG</span>
+          <span class="tag">Graph RAG</span>
+          <span class="tag">Hallucination</span>
+          <span class="tag">Grounding</span>
+          <span class="tag">Fine-tuning</span>
+          <span class="tag">Pinecone</span>
+          <span class="tag">LangChain</span>
+          <span class="tag">GPT-4o</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">RAG at a Glance</div>
+      <div class="sidebar-widget-body" style="font-size: 0.86rem;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div><strong>Introduced:</strong><br>Meta AI Research, 2020</div>
+          <div><strong>Core components:</strong><br>Retriever + Generator</div>
+          <div><strong>Primary benefit:</strong><br>Grounded, cited, current answers</div>
+          <div><strong>Best for:</strong><br>Enterprise knowledge, Q&A, compliance</div>
+          <div><strong>Vs fine-tuning:</strong><br>100× cheaper to update</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-widget" style="background: var(--ink); border-color: var(--ink);">
+      <div class="sidebar-widget-title" style="background: var(--accent);">RAG Readiness Checklist</div>
+      <div class="sidebar-widget-body" style="color: var(--paper);">
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.84rem;">
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Define target knowledge corpus
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Choose embedding model
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Set up vector database
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Design chunking strategy
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Select LLM provider
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Define evaluation metrics
+          </label>
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            <input type="checkbox" style="accent-color: var(--accent);"> Plan update cadence
+          </label>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p><strong>AI/ML Technical Review</strong> · Deep technical content for AI practitioners and decision makers</p>
+  <p style="margin-top: 10px;">© 2025 · All content is for educational purposes · Sources: Meta AI Research, RAGAS, LangChain, industry reports</p>
+</footer>
+
+<script>
+  // Tab switching
+  function switchTab(tab) {
+    document.querySelectorAll('.video-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.video-content').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  function openVideo(url) {
+    window.open(url, '_blank');
+  }
+
+  // Interactive RAG demo
+  function runDemo() {
+    const query = document.getElementById('demo-input').value || 'What is the Q3 revenue target?';
+    const output = document.getElementById('demo-output');
+    const steps = document.getElementById('demo-steps');
+    output.style.display = 'block';
+    steps.innerHTML = '';
+
+    const pipeline = [
+      { label: '🔤 Step 1: Query Received', content: `"${query}"`, color: '#1a4fc8', delay: 0 },
+      { label: '🔢 Step 2: Embedding Generated', content: 'Vector: [0.234, -0.891, 0.445, 0.178, ..., -0.332]  (1536 dimensions)', color: '#8b1ac8', delay: 600 },
+      { label: '🔍 Step 3: Top-K Documents Retrieved', content: '✅ Doc 1: Q3 Planning Deck, slide 14 (similarity: 0.94)\n✅ Doc 2: Financial Forecast 2024 PDF, page 3 (similarity: 0.89)\n✅ Doc 3: Board Meeting Notes Aug 2024 (similarity: 0.82)', color: '#1a8c5a', delay: 1200 },
+      { label: '✍️ Step 4: Augmented Prompt Built', content: 'Context: [Retrieved chunks injected] + Query: "' + query + '"', color: '#c89b1a', delay: 1800 },
+      { label: '🤖 Step 5: LLM Generates Grounded Answer', content: 'Based on the Q3 Planning Deck (slide 14) and the Financial Forecast 2024, the Q3 revenue target is $42.5M, representing a 18% YoY growth over Q3 2023.\n\n📎 Source: Q3 Planning Deck · Financial Forecast 2024', color: '#c8421a', delay: 2400 },
+    ];
+
+    pipeline.forEach(step => {
+      setTimeout(() => {
+        const div = document.createElement('div');
+        div.style.cssText = `background: ${step.color}15; border-left: 3px solid ${step.color}; padding: 14px 18px; border-radius: 2px; animation: fadeUp 0.4s ease both;`;
+        div.innerHTML = `<div style="font-weight:600; font-size:0.82rem; color:${step.color}; margin-bottom:6px; letter-spacing:0.04em;">${step.label}</div><pre style="font-family:'DM Mono',monospace; font-size:0.8rem; white-space:pre-wrap; color:#2a2520; margin:0;">${step.content}</pre>`;
+        steps.appendChild(div);
+        steps.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, step.delay);
+    });
+  }
+
+  // Smooth active TOC
+  const sections = document.querySelectorAll('[id]');
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+    tocLinks.forEach(l => {
+      l.style.color = l.getAttribute('href') === '#' + current ? 'var(--accent)' : '';
+    });
+  });
+</script>
+
+</body>
+</html>
