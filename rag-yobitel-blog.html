@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retrieval-Augmented Generation — The Complete Guide | Yobitel</title>
+<meta name="description" content="A complete technical guide to Retrieval-Augmented Generation (RAG) — architecture, use cases, LLM integration, and real-world examples. By Yobitel, 2026.">
+<meta property="og:title" content="RAG: The Complete Guide | Yobitel 2026">
+<meta property="og:description" content="How Retrieval-Augmented Generation is transforming AI systems with real-time, grounded, accurate answers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════ */
+:root {
+  --bg:       #f7f4ee;
+  --surface:  #ffffff;
+  --ink:      #111110;
+  --ink2:     #3a3835;
+  --muted:    #7a756e;
+  --border:   #e0dbd0;
+  --red:      #c0392b;
+  --red-dim:  #f9eeec;
+  --blue:     #1a56a0;
+  --blue-dim: #edf2fb;
+  --green:    #197a4f;
+  --green-dim:#eaf5ef;
+  --amber:    #b45309;
+  --amber-dim:#fef9ec;
+  --nav-h:    64px;
+  --max:      780px;
+  --max-wide: 1060px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.78;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════════════
+   NAV — pure anchor links, zero JS needed
+════════════════════════════════════════ */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(17,17,16,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--red);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 0;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+}
+.nav-brand-name {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f7f4ee;
+  letter-spacing: -0.01em;
+}
+.nav-brand-name em { color: var(--red); font-style: normal; }
+.nav-brand-sub {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(247,244,238,0.35);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+}
+/* KEY FIX: all nav links are pure # anchors, no href to external */
+.nav-links a {
+  display: block;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(247,244,238,0.55);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover {
+  color: #f7f4ee;
+  background: rgba(255,255,255,0.08);
+}
+.nav-links a.active { color: var(--red); }
+
+/* hamburger for mobile */
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #f7f4ee;
+  margin: 4px 0;
+  transition: all 0.2s;
+}
+@media (max-width: 700px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: var(--nav-h);
+    left: 0; right: 0;
+    background: #111110;
+    flex-direction: column;
+    padding: 16px;
+    gap: 4px;
+    border-bottom: 2px solid var(--red);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { width: 100%; padding: 12px 16px; }
+}
+
+/* ════════════════════════════════════════
+   HERO
+════════════════════════════════════════ */
+.hero {
+  background: #111110;
+  overflow: hidden;
+  position: relative;
+  padding: 90px 32px 80px;
+}
+.hero-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+}
+.hero-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(192,57,43,0.18) 0%, transparent 70%);
+  top: -200px; right: -100px;
+  pointer-events: none;
+}
+.hero-glow2 {
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,86,160,0.12) 0%, transparent 70%);
+  bottom: -100px; left: -80px;
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: var(--max-wide);
+  margin: 0 auto;
+  position: relative;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.hero-tag {
+  background: var(--red);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.hero-year {
+  font-size: 0.72rem;
+  color: rgba(247,244,238,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hero-divot { color: rgba(247,244,238,0.2); }
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(2.6rem, 5.5vw, 4.8rem);
+  font-weight: 900;
+  line-height: 1.06;
+  color: #f7f4ee;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+  max-width: 820px;
+}
+.hero h1 .accent { color: var(--red); font-style: italic; }
+
+.hero-lead {
+  font-size: 1.1rem;
+  color: rgba(247,244,238,0.65);
+  max-width: 580px;
+  line-height: 1.72;
+  margin-bottom: 44px;
+  font-weight: 400;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 56px;
+}
+.hero-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), #e67e22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+}
+.hero-author-text { font-size: 0.84rem; }
+.hero-author-name { color: #f7f4ee; font-weight: 600; display: block; }
+.hero-author-role { color: rgba(247,244,238,0.4); font-size: 0.76rem; display: block; }
+.hero-sep { color: rgba(247,244,238,0.15); font-size: 1.2rem; }
+.hero-read { font-size: 0.82rem; color: rgba(247,244,238,0.4); }
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 640px;
+}
+.hero-stat {
+  padding: 20px 24px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.hero-stat:last-child { border-right: none; }
+.hero-stat-num {
+  font-family: 'Fraunces', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--red);
+  display: block;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.hero-stat-label {
+  font-size: 0.72rem;
+  color: rgba(247,244,238,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
+/* ════════════════════════════════════════
+   PROGRESS BAR
+════════════════════════════════════════ */
+.progress-bar {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  height: 2px;
+  background: var(--red);
+  width: 0%;
+  z-index: 300;
+  transition: width 0.1s linear;
+}
+
+/* ════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════ */
+.page {
+  max-width: var(--max-wide);
+  margin: 0 auto;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 64px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; gap: 0; }
+  .sidebar { display: none; }
+}
+
+.main { padding: 72px 0 80px; }
+.sidebar { padding: 72px 0; }
+
+/* ════════════════════════════════════════
+   TYPOGRAPHY
+════════════════════════════════════════ */
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 10px;
+  margin-top: 72px;
+}
+.section-tag::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--red);
+}
+
+.main h2 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.18;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.main h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 48px 0 14px;
+}
+.main p {
+  color: var(--ink2);
+  margin-bottom: 1.4rem;
+}
+.main strong { color: var(--ink); }
+
+/* ════════════════════════════════════════
+   PULLQUOTE
+════════════════════════════════════════ */
+.pullquote {
+  position: relative;
+  margin: 44px 0;
+  padding: 28px 32px 28px 36px;
+  border-left: 4px solid var(--red);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.pullquote::before {
+  content: '\201C';
+  font-family: 'Fraunces', serif;
+  font-size: 5rem;
+  color: var(--red);
+  opacity: 0.15;
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  line-height: 1;
+}
+.pullquote p {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.65;
+  margin-bottom: 12px;
+  position: relative;
+}
+.pullquote cite {
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ════════════════════════════════════════
+   CARDS — problems
+════════════════════════════════════════ */
+.prob-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 32px 0;
+}
+@media (max-width: 640px) { .prob-grid { grid-template-columns: 1fr; } }
+
+.prob-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 3px solid;
+  padding: 22px 20px;
+  border-radius: 2px;
+}
+.prob-card:nth-child(1) { border-top-color: var(--red); }
+.prob-card:nth-child(2) { border-top-color: var(--blue); }
+.prob-card:nth-child(3) { border-top-color: var(--green); }
+.prob-icon { font-size: 1.7rem; margin-bottom: 12px; display: block; }
+.prob-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 7px; color: var(--ink); }
+.prob-desc { font-size: 0.84rem; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* ════════════════════════════════════════
+   ARCHITECTURE DIAGRAM
+════════════════════════════════════════ */
+.arch-wrap {
+  background: #111110;
+  border-radius: 8px;
+  padding: 40px 28px 36px;
+  margin: 36px 0;
+  overflow-x: auto;
+  position: relative;
+}
+.arch-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 28px;
+  display: block;
+}
+
+/* Online flow */
+.arch-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 580px;
+  margin-bottom: 32px;
+}
+.arch-node {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 14px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  min-width: 96px;
+}
+.arch-node.red   { border-color: rgba(192,57,43,0.5);  background: rgba(192,57,43,0.1); }
+.arch-node.blue  { border-color: rgba(26,86,160,0.5);  background: rgba(26,86,160,0.1); }
+.arch-node.green { border-color: rgba(25,122,79,0.5);  background: rgba(25,122,79,0.1); }
+.arch-node-icon { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+.arch-node-name {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(247,244,238,0.85);
+  display: block;
+}
+.arch-node-sub {
+  font-size: 0.56rem;
+  color: rgba(247,244,238,0.35);
+  display: block;
+  margin-top: 3px;
+}
+.arch-arr {
+  color: var(--red);
+  font-size: 1.2rem;
+  padding: 0 5px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Offline pipeline */
+.arch-offline {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 24px;
+}
+.arch-offline-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(192,57,43,0.75);
+  margin-bottom: 14px;
+  display: block;
+}
+.arch-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 500px;
+}
+.arch-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 5px 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  color: rgba(247,244,238,0.65);
+}
+.arch-chip.hi { border-color: rgba(26,86,160,0.5); color: rgba(130,180,255,0.9); }
+.arch-chip-arr { color: rgba(192,57,43,0.6); font-size: 0.9rem; }
+.arch-dbs {
+  margin-top: 12px;
+  font-size: 0.6rem;
+  color: rgba(247,244,238,0.22);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+}
+
+/* ════════════════════════════════════════
+   STEPS
+════════════════════════════════════════ */
+.steps { margin: 32px 0; display: flex; flex-direction: column; gap: 0; }
+.step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 20px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  width: 40px; height: 40px;
+  background: var(--red);
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.step-body h4 {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.step-body p { font-size: 0.9rem; color: var(--muted); margin: 0; line-height: 1.65; }
+
+/* ════════════════════════════════════════
+   CODE BLOCK
+════════════════════════════════════════ */
+.code-wrap {
+  background: #0f1117;
+  border-radius: 8px;
+  margin: 32px 0;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dot { width: 10px; height: 10px; border-radius: 50%; }
+.code-dot.r { background: #ff5f57; }
+.code-dot.y { background: #ffbd2e; }
+.code-dot.g { background: #28c840; }
+.code-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.code-wrap pre {
+  padding: 24px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: #abb2bf;
+  tab-size: 2;
+}
+.t-kw  { color: #c678dd; }
+.t-fn  { color: #61afef; }
+.t-str { color: #98c379; }
+.t-cm  { color: #5c6370; font-style: italic; }
+.t-num { color: #e5c07b; }
+
+/* ════════════════════════════════════════
+   DIVIDER
+════════════════════════════════════════ */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 64px 0 0;
+  color: var(--border);
+}
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.divider span {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════
+   USE CASES
+════════════════════════════════════════ */
+.usecase-list { display: flex; flex-direction: column; gap: 16px; margin: 32px 0; }
+.usecase {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 20px;
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 4px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.usecase:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
+.usecase-n {
+  font-family: 'Fraunces', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--border);
+  line-height: 1;
+  margin-top: 2px;
+}
+.usecase-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+.usecase-desc {
+  font-size: 0.88rem;
+  color: var(--ink2);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+.usecase-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.usecase-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 3px;
+}
+
+/* ════════════════════════════════════════
+   FEATURE GRID
+════════════════════════════════════════ */
+.feat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 28px 0;
+}
+@media (max-width: 600px) { .feat-grid { grid-template-columns: 1fr; } }
+.feat-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.feat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+.feat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+}
+.feat-card:nth-child(1)::after { background: var(--red); }
+.feat-card:nth-child(2)::after { background: var(--blue); }
+.feat-card:nth-child(3)::after { background: var(--green); }
+.feat-card:nth-child(4)::after { background: var(--amber); }
+.feat-card:nth-child(5)::after { background: #7c3aed; }
+.feat-card:nth-child(6)::after { background: var(--red); }
+.feat-card:nth-child(7)::after { background: var(--blue); }
+.feat-card:nth-child(8)::after { background: var(--green); }
+.feat-icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+.feat-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 5px; }
+.feat-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* ════════════════════════════════════════
+   COMPARISON TABLE
+════════════════════════════════════════ */
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 0.88rem;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.compare thead th {
+  background: var(--ink);
+  color: #f7f4ee;
+  padding: 13px 16px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.compare thead th:first-child { width: 200px; }
+.compare tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  background: #fff;
+}
+.compare tbody tr:last-child td { border-bottom: none; }
+.compare tbody tr:nth-child(even) td { background: #faf9f7; }
+.compare tbody td:first-child { font-weight: 600; color: var(--ink); }
+.chk { color: var(--green); font-weight: 600; }
+.crs { color: var(--red); }
+.prt { color: var(--amber); }
+
+/* ════════════════════════════════════════
+   CALLOUT BOX
+════════════════════════════════════════ */
+.callout {
+  background: #111110;
+  color: #f7f4ee;
+  padding: 36px;
+  border-radius: 8px;
+  margin: 36px 0;
+  position: relative;
+  overflow: hidden;
+}
+.callout::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(192,57,43,0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+.callout-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 14px;
+}
+.callout p {
+  color: rgba(247,244,238,0.75);
+  font-size: 0.93rem;
+  line-height: 1.72;
+  margin-bottom: 8px;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout strong { color: rgba(247,244,238,0.95); }
+
+/* ════════════════════════════════════════
+   METRICS
+════════════════════════════════════════ */
+.metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 28px 0; }
+.metric {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 4px;
+  text-align: center;
+}
+.metric-num {
+  font-family: 'Fraunces', serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--red);
+  display: block;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.metric-label { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+/* ════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════ */
+.sidebar-sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.sw {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.sw-head {
+  background: var(--ink);
+  color: #f7f4ee;
+  padding: 10px 16px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.sw-body { padding: 16px; }
+
+/* TOC inside sidebar — anchor links only */
+.toc { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.toc a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 4px 6px;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+.toc a::before { content: '→'; color: var(--red); font-size: 0.75em; flex-shrink: 0; }
+.toc a:hover { color: var(--ink); background: var(--bg); }
+
+.sw-facts { display: flex; flex-direction: column; gap: 10px; }
+.sw-fact { font-size: 0.82rem; }
+.sw-fact strong { display: block; color: var(--ink); margin-bottom: 1px; }
+.sw-fact span { color: var(--muted); }
+
+.sw-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw-tag {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 3px;
+  cursor: default;
+  transition: all 0.15s;
+}
+.sw-tag:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* checklist */
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.checklist li { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: rgba(247,244,238,0.75); }
+.checklist input[type=checkbox] { accent-color: var(--red); width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════ */
+.footer {
+  background: #111110;
+  border-top: 3px solid var(--red);
+  padding: 48px 32px;
+  text-align: center;
+}
+.footer-brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f7f4ee;
+  margin-bottom: 8px;
+}
+.footer-brand em { color: var(--red); font-style: normal; }
+.footer-sub { font-size: 0.78rem; color: rgba(247,244,238,0.35); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 20px; }
+.footer-copy { font-size: 0.78rem; color: rgba(247,244,238,0.25); }
+
+/* ════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-inner > * { animation: fadeUp 0.65s ease both; }
+.hero-inner > *:nth-child(1) { animation-delay: 0.05s; }
+.hero-inner > *:nth-child(2) { animation-delay: 0.15s; }
+.hero-inner > *:nth-child(3) { animation-delay: 0.25s; }
+.hero-inner > *:nth-child(4) { animation-delay: 0.35s; }
+.hero-inner > *:nth-child(5) { animation-delay: 0.45s; }
+
+/* scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+@media (max-width: 600px) {
+  .hero { padding: 60px 20px 56px; }
+  .hero-stats { grid-template-columns: 1fr 1fr; }
+  .hero-stats .hero-stat:last-child { grid-column: span 2; }
+  .page { padding: 0 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- READING PROGRESS -->
+<div class="progress-bar" id="progress"></div>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav class="nav">
+  <a class="nav-brand" href="#top">
+    <span class="nav-brand-name">Yobi<em>tel</em></span>
+    <span class="nav-brand-sub">AI/ML Review</span>
+  </a>
+  <button class="nav-toggle" id="menuToggle" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#section-what">Foundation</a></li>
+    <li><a href="#section-arch">Architecture</a></li>
+    <li><a href="#section-usecases">Use Cases</a></li>
+    <li><a href="#section-llm">RAG + LLM</a></li>
+    <li><a href="#section-metrics">Metrics</a></li>
+    <li><a href="#section-start">Get Started</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero" id="top">
+  <div class="hero-noise"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <span class="hero-tag">Deep Dive</span>
+      <span class="hero-divot">·</span>
+      <span class="hero-year">Generative AI · 2026</span>
+    </div>
+
+    <h1>
+      Retrieval-<br>
+      <span class="accent">Augmented</span><br>
+      Generation
+    </h1>
+
+    <p class="hero-lead">How combining real-time retrieval with large language models creates AI systems that are grounded, accurate, current, and enterprise-ready — without hallucinations.</p>
+
+    <div class="hero-meta">
+      <div class="hero-author">
+        <div class="hero-avatar">Y</div>
+        <div class="hero-author-text">
+          <span class="hero-author-name">Yobitel</span>
+          <span class="hero-author-role">AI/ML Technical Review</span>
+        </div>
+      </div>
+      <span class="hero-sep">|</span>
+      <span class="hero-read">⏱ 18 min read · 2026 Edition</span>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">40%</span>
+        <span class="hero-stat-label">Reduction in AI hallucinations</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">3×</span>
+        <span class="hero-stat-label">Faster enterprise AI deployment</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">$4B+</span>
+        <span class="hero-stat-label">Market size by 2030</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+<div class="page">
+<main class="main">
+
+  <!-- ── SECTION 1: WHAT IS RAG ── -->
+  <span class="section-tag" id="section-what">01 Foundation</span>
+  <h2>What is Retrieval-Augmented Generation?</h2>
+
+  <p class="reveal">Imagine asking a brilliant expert a question — but that expert was trained in 2023 and has been isolated since, with no access to new books, news, or company data. That's a standard Large Language Model (LLM). Now imagine giving that same expert a live knowledge base, your entire company documentation, and a supercharged search engine in real-time. That's <strong>Retrieval-Augmented Generation (RAG)</strong>.</p>
+
+  <p class="reveal">RAG is an AI architecture pattern introduced by Meta researchers in 2020 that <em>augments</em> language models with a retrieval system that fetches relevant, up-to-date information before generating a response. Instead of relying solely on baked-in model weights, RAG grounds every answer in actual, verifiable source documents.</p>
+
+  <div class="pullquote reveal">
+    <p>"RAG enables language models to consult external knowledge at inference time — transforming them from static encyclopedias into dynamic, continuously-informed reasoning engines."</p>
+    <cite>— Meta AI Research, 2020 · Curated by Yobitel, 2026</cite>
+  </div>
+
+  <p class="reveal">The core insight is elegant: rather than training a model on all possible knowledge (which becomes outdated and expensive), we keep the model's reasoning capabilities separate from the knowledge it references. This separation of concerns is what makes RAG both powerful and practical for production systems.</p>
+
+  <h3>The Three Problems RAG Solves</h3>
+  <div class="prob-grid reveal">
+    <div class="prob-card">
+      <span class="prob-icon">🧠</span>
+      <div class="prob-title">Knowledge Cutoff</div>
+      <p class="prob-desc">LLMs only know what they were trained on. RAG gives them access to current, live information from any data source — no retraining required.</p>
+    </div>
+    <div class="prob-card">
+      <span class="prob-icon">🌀</span>
+      <div class="prob-title">Hallucination</div>
+      <p class="prob-desc">Models fabricate plausible-sounding but false facts. RAG anchors responses to retrieved, verifiable source documents — every claim is traceable.</p>
+    </div>
+    <div class="prob-card">
+      <span class="prob-icon">🔒</span>
+      <div class="prob-title">Private Data Access</div>
+      <p class="prob-desc">LLMs can't access proprietary databases or internal wikis. RAG bridges this gap securely while preserving data governance and access controls.</p>
+    </div>
+  </div>
+
+  <div class="divider"><span>Architecture</span></div>
+
+  <!-- ── SECTION 2: ARCHITECTURE ── -->
+  <span class="section-tag" id="section-arch">02 Architecture</span>
+  <h2>The RAG Architecture, Explained</h2>
+
+  <p class="reveal">RAG operates through a tightly coordinated pipeline of four key phases. Understanding each phase is essential to building or evaluating RAG systems in production environments.</p>
+
+  <!-- ARCHITECTURE DIAGRAM — fully self-contained, no external links -->
+  <div class="arch-wrap reveal">
+    <span class="arch-label">RAG System Architecture — Yobitel 2026</span>
+
+    <div style="margin-bottom:10px; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; color:rgba(192,57,43,0.6);">⬤ Online Inference Pipeline</div>
+    <div class="arch-flow">
+      <div class="arch-node">
+        <span class="arch-node-icon">👤</span>
+        <span class="arch-node-name">User Query</span>
+        <span class="arch-node-sub">Natural language</span>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-node blue">
+        <span class="arch-node-icon">🔢</span>
+        <span class="arch-node-name">Embedding</span>
+        <span class="arch-node-sub">Query → Vector</span>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-node red">
+        <span class="arch-node-icon">🔍</span>
+        <span class="arch-node-name">Retriever</span>
+        <span class="arch-node-sub">ANN Search</span>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-node">
+        <span class="arch-node-icon">📄</span>
+        <span class="arch-node-name">Top-K Docs</span>
+        <span class="arch-node-sub">Relevant chunks</span>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-node blue">
+        <span class="arch-node-icon">🤖</span>
+        <span class="arch-node-name">LLM</span>
+        <span class="arch-node-sub">Context + Query</span>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-node green">
+        <span class="arch-node-icon">✅</span>
+        <span class="arch-node-name">Answer</span>
+        <span class="arch-node-sub">Grounded + Cited</span>
+      </div>
+    </div>
+
+    <div class="arch-offline">
+      <span class="arch-offline-label">⬤ Offline Indexing Pipeline — runs once, updates incrementally</span>
+      <div class="arch-chips">
+        <div class="arch-chip">📚 Raw Documents</div>
+        <div class="arch-chip-arr">→</div>
+        <div class="arch-chip">✂️ Chunking</div>
+        <div class="arch-chip-arr">→</div>
+        <div class="arch-chip">🔢 Embedding Model</div>
+        <div class="arch-chip-arr">→</div>
+        <div class="arch-chip hi">🗄️ Vector Database</div>
+        <div class="arch-chip-arr">→</div>
+        <div class="arch-chip hi">🔍 ANN Index</div>
+      </div>
+      <div class="arch-dbs">Vector DBs: Pinecone · Weaviate · Chroma · pgvector · Qdrant · FAISS · Milvus</div>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Ingestion &amp; Indexing (Offline)</h4>
+        <p>Source documents — PDFs, databases, websites, internal wikis — are ingested, split into semantic chunks, and converted to dense vector embeddings using an embedding model. These vectors are stored in a vector database for fast similarity search.</p>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Query Embedding</h4>
+        <p>When a user asks a question, it's converted into a vector using the same embedding model. This creates a mathematical representation of the query's semantic meaning in the same vector space as the indexed documents.</p>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Semantic Retrieval</h4>
+        <p>The query vector is used to perform approximate nearest-neighbor (ANN) search against the vector index. The top-K most semantically similar document chunks are retrieved — the most relevant knowledge for the query.</p>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Augmented Generation</h4>
+        <p>The retrieved chunks are injected into the LLM's prompt as context alongside the original query. The LLM synthesizes its trained knowledge with the grounded context — generating a cited, hallucination-resistant response.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>RAG in Code — Python + LangChain</h3>
+  <div class="code-wrap reveal">
+    <div class="code-header">
+      <div class="code-dots">
+        <div class="code-dot r"></div>
+        <div class="code-dot y"></div>
+        <div class="code-dot g"></div>
+      </div>
+      <span class="code-lang">Python · LangChain</span>
+    </div>
+    <pre>
+<span class="t-kw">from</span> langchain_community.vectorstores <span class="t-kw">import</span> Chroma
+<span class="t-kw">from</span> langchain_openai <span class="t-kw">import</span> OpenAIEmbeddings, ChatOpenAI
+<span class="t-kw">from</span> langchain.chains <span class="t-kw">import</span> RetrievalQA
+<span class="t-kw">from</span> langchain_community.document_loaders <span class="t-kw">import</span> PyPDFLoader
+
+<span class="t-cm"># 1. Ingest & index documents</span>
+loader = <span class="t-fn">PyPDFLoader</span>(<span class="t-str">"knowledge_base.pdf"</span>)
+docs = loader.<span class="t-fn">load_and_split</span>()
+embeddings = <span class="t-fn">OpenAIEmbeddings</span>(model=<span class="t-str">"text-embedding-3-large"</span>)
+vectorstore = Chroma.<span class="t-fn">from_documents</span>(docs, embeddings)
+
+<span class="t-cm"># 2. Configure retriever — Max Marginal Relevance</span>
+retriever = vectorstore.<span class="t-fn">as_retriever</span>(
+    search_type=<span class="t-str">"mmr"</span>,
+    search_kwargs={<span class="t-str">"k"</span>: <span class="t-num">5</span>}
+)
+
+<span class="t-cm"># 3. Wire in the LLM generator</span>
+llm = <span class="t-fn">ChatOpenAI</span>(model=<span class="t-str">"gpt-4o"</span>, temperature=<span class="t-num">0</span>)
+rag = RetrievalQA.<span class="t-fn">from_chain_type</span>(
+    llm=llm, chain_type=<span class="t-str">"stuff"</span>,
+    retriever=retriever,
+    return_source_documents=<span class="t-num">True</span>
+)
+
+<span class="t-cm"># 4. Query — grounded, cited answer</span>
+result = rag.<span class="t-fn">invoke</span>({<span class="t-str">"query"</span>: <span class="t-str">"What is our Q3 revenue target?"</span>})
+<span class="t-fn">print</span>(result[<span class="t-str">"result"</span>])            <span class="t-cm"># Grounded answer</span>
+<span class="t-fn">print</span>(result[<span class="t-str">"source_documents"</span>])   <span class="t-cm"># Cited source chunks</span></pre>
+  </div>
+
+  <div class="divider"><span>Use Cases</span></div>
+
+  <!-- ── SECTION 3: USE CASES ── -->
+  <span class="section-tag" id="section-usecases">03 Use Cases</span>
+  <h2>Where RAG is Transforming Industries</h2>
+  <p class="reveal">RAG has moved from research prototype to production staple. Here are the six highest-impact applications Yobitel has identified across enterprise deployments in 2026.</p>
+
+  <div class="usecase-list">
+    <div class="usecase reveal">
+      <div class="usecase-n">01</div>
+      <div>
+        <div class="usecase-title">Enterprise Knowledge Management &amp; Internal Q&amp;A</div>
+        <p class="usecase-desc">Companies deploy RAG to turn thousands of policy documents, SOPs, HR manuals, and wiki pages into a conversational assistant. Employees ask questions in natural language and receive precise, cited answers — no more drowning in search results or outdated documents.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">Notion AI</span>
+          <span class="usecase-pill">Confluence AI</span>
+          <span class="usecase-pill">SharePoint Copilot</span>
+        </div>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <div class="usecase-n">02</div>
+      <div>
+        <div class="usecase-title">Customer Support &amp; Intelligent Help Desks</div>
+        <p class="usecase-desc">RAG-powered chatbots retrieve answers from product documentation, FAQs, and ticket histories to resolve customer queries accurately. Unlike scripted bots, RAG systems handle novel questions by combining retrieval with generative reasoning — reducing escalation rates by up to 60%.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">Salesforce Einstein</span>
+          <span class="usecase-pill">Intercom Fin</span>
+          <span class="usecase-pill">Zendesk AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <div class="usecase-n">03</div>
+      <div>
+        <div class="usecase-title">Legal &amp; Compliance Intelligence</div>
+        <p class="usecase-desc">Law firms and compliance teams use RAG to query vast repositories of case law, regulatory filings, and contracts. The system surfaces relevant precedents and statutes, while the LLM synthesizes findings with precise legal reasoning — always citing the exact source document and page.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">Harvey AI</span>
+          <span class="usecase-pill">LexisNexis AI</span>
+          <span class="usecase-pill">Thomson Reuters CoCounsel</span>
+        </div>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <div class="usecase-n">04</div>
+      <div>
+        <div class="usecase-title">Medical &amp; Clinical Decision Support</div>
+        <p class="usecase-desc">Healthcare organizations index clinical guidelines, research papers, and patient records into RAG systems that help clinicians access relevant protocols, drug interaction data, and evidence-based treatment options at the point of care — grounded in peer-reviewed literature.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">Microsoft DAX Copilot</span>
+          <span class="usecase-pill">Nuance</span>
+          <span class="usecase-pill">Epic AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <div class="usecase-n">05</div>
+      <div>
+        <div class="usecase-title">Financial Research &amp; Analysis</div>
+        <p class="usecase-desc">Asset managers and analysts deploy RAG over earnings transcripts, SEC filings, market reports, and news feeds. The system synthesizes multi-source financial intelligence, tracks company developments over time, and answers quantitative queries with traceable citations.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">Bloomberg AI</span>
+          <span class="usecase-pill">Morgan Stanley AI</span>
+          <span class="usecase-pill">Kensho</span>
+        </div>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <div class="usecase-n">06</div>
+      <div>
+        <div class="usecase-title">Code Assistance &amp; Developer Tooling</div>
+        <p class="usecase-desc">Developer tools index internal codebases, API documentation, and issue trackers. RAG enables AI assistants to suggest fixes, explain unfamiliar code, and generate implementations using internal libraries — grounded in your actual codebase, not generic training data.</p>
+        <div class="usecase-pills">
+          <span class="usecase-pill">GitHub Copilot Enterprise</span>
+          <span class="usecase-pill">Cursor</span>
+          <span class="usecase-pill">Codeium</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"><span>RAG + LLM</span></div>
+
+  <!-- ── SECTION 4: RAG + LLM ── -->
+  <span class="section-tag" id="section-llm">04 RAG + LLM</span>
+  <h2>Why RAG + LLMs is the Winning Combination</h2>
+
+  <p class="reveal">RAG and LLMs are architecturally complementary. LLMs excel at reasoning, synthesis, and language — but struggle with factual accuracy over time. RAG provides the factual grounding. Together, they form systems greater than the sum of their parts.</p>
+
+  <div class="callout reveal">
+    <div class="callout-title">The Synergy, Explained</div>
+    <p>Think of the LLM as the <strong>reasoning engine</strong> — it understands intent, synthesizes information, and generates fluent, coherent language. RAG is the <strong>information retrieval layer</strong> — it knows where to look and what to surface at query time.</p>
+    <p>When the LLM is given retrieved context, it doesn't need to "remember" facts — it needs to <em>reason over them</em>. This is precisely what LLMs do best. The result: systems that are simultaneously more accurate, more current, and more explainable than either component alone.</p>
+  </div>
+
+  <h3>Key Features of a Production RAG System</h3>
+  <div class="feat-grid reveal">
+    <div class="feat-card">
+      <span class="feat-icon">📡</span>
+      <div class="feat-title">Real-Time Knowledge</div>
+      <p class="feat-desc">RAG retrieves from live, updatable knowledge bases. Your AI always has the latest information without retraining the model.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔗</span>
+      <div class="feat-title">Source Attribution</div>
+      <p class="feat-desc">Every claim can be traced to a source document. Users can verify answers — enabling trust and compliance workflows.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💡</span>
+      <div class="feat-title">Domain Specialization</div>
+      <p class="feat-desc">Point retrieval at domain-specific corpora to transform a general-purpose LLM into a vertical expert system.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💰</span>
+      <div class="feat-title">Cost Efficiency</div>
+      <p class="feat-desc">Updating knowledge costs only a re-indexing operation — typically 100× cheaper than a full model retraining cycle.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔐</span>
+      <div class="feat-title">Data Privacy Control</div>
+      <p class="feat-desc">Sensitive documents stay in your private vector store. You control exactly what the model can access at query time.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">⚡</span>
+      <div class="feat-title">Scalable Architecture</div>
+      <p class="feat-desc">Retrieval and generation scale independently. Swap embedding models, vector DBs, or LLMs without rebuilding the pipeline.</p>
+    </div>
+  </div>
+
+  <h3>RAG vs. Fine-Tuning vs. Base LLM</h3>
+  <div class="reveal">
+  <table class="compare">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Base LLM</th>
+        <th>Fine-Tuned LLM</th>
+        <th>RAG</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Up-to-date knowledge</td>
+        <td><span class="crs">✗</span> Cutoff date</td>
+        <td><span class="crs">✗</span> Cutoff date</td>
+        <td><span class="chk">✓</span> Real-time</td>
+      </tr>
+      <tr>
+        <td>Private data access</td>
+        <td><span class="crs">✗</span> None</td>
+        <td><span class="prt">〜</span> At training</td>
+        <td><span class="chk">✓</span> At query time</td>
+      </tr>
+      <tr>
+        <td>Source citation</td>
+        <td><span class="crs">✗</span> Unsupported</td>
+        <td><span class="crs">✗</span> Unsupported</td>
+        <td><span class="chk">✓</span> Native</td>
+      </tr>
+      <tr>
+        <td>Update cost</td>
+        <td><span class="crs">✗</span> Full retrain</td>
+        <td><span class="prt">〜</span> Fine-tune runs</td>
+        <td><span class="chk">✓</span> Re-index only</td>
+      </tr>
+      <tr>
+        <td>Hallucination risk</td>
+        <td><span class="crs">✗</span> High</td>
+        <td><span class="prt">〜</span> Medium</td>
+        <td><span class="chk">✓</span> Low — grounded</td>
+      </tr>
+      <tr>
+        <td>Style / persona learning</td>
+        <td><span class="prt">〜</span> Generic</td>
+        <td><span class="chk">✓</span> Excellent</td>
+        <td><span class="prt">〜</span> Via prompting</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Advanced RAG Patterns — 2026</h3>
+  <div class="feat-grid reveal">
+    <div class="feat-card">
+      <span class="feat-icon">🔄</span>
+      <div class="feat-title">Agentic RAG</div>
+      <p class="feat-desc">The LLM decides when and how to retrieve, issues multiple retrieval calls, and refines queries iteratively. Best for complex, multi-hop questions.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🌐</span>
+      <div class="feat-title">Hybrid Search RAG</div>
+      <p class="feat-desc">Combines dense vector search with sparse keyword search (BM25). Captures both conceptual meaning and exact keyword matches for higher recall.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🗂️</span>
+      <div class="feat-title">Graph RAG</div>
+      <p class="feat-desc">Indexes documents as knowledge graphs (entities + relationships). Enables multi-hop reasoning across connected facts — ideal for medicine and law.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔁</span>
+      <div class="feat-title">Self-RAG</div>
+      <p class="feat-desc">The LLM critiques its own outputs and decides whether to retrieve additional information mid-generation — improving factuality while reducing overhead.</p>
+    </div>
+  </div>
+
+  <div class="divider"><span>Evaluation</span></div>
+
+  <!-- ── SECTION 5: METRICS ── -->
+  <span class="section-tag" id="section-metrics">05 Measuring Quality</span>
+  <h2>How to Evaluate a RAG System</h2>
+
+  <p class="reveal">Production RAG systems require rigorous evaluation beyond simple accuracy metrics. The <strong>RAGAS framework</strong> defines four core dimensions used by leading AI teams in 2026:</p>
+
+  <div class="metrics reveal">
+    <div class="metric">
+      <span class="metric-num">Faithfulness</span>
+      <div class="metric-label">Are all claims in the answer supported by the retrieved context? Measures hallucination at the claim level.</div>
+    </div>
+    <div class="metric">
+      <span class="metric-num">Relevance</span>
+      <div class="metric-label">Does the generated answer actually address the user's question, without unnecessary padding or tangential content?</div>
+    </div>
+    <div class="metric">
+      <span class="metric-num">Precision</span>
+      <div class="metric-label">What proportion of retrieved context is actually relevant? Measures retrieval efficiency and signal-to-noise ratio.</div>
+    </div>
+    <div class="metric">
+      <span class="metric-num">Recall</span>
+      <div class="metric-label">Did the retrieval system find all the relevant information? Measures completeness — what important context was missed?</div>
+    </div>
+  </div>
+
+  <div class="divider"><span>Get Started</span></div>
+
+  <!-- ── SECTION 6: GET STARTED ── -->
+  <span class="section-tag" id="section-start">06 Getting Started</span>
+  <h2>Build Your First RAG System</h2>
+
+  <p class="reveal">RAG has moved from research prototype to production baseline. If you're building AI-powered products or integrating LLMs into enterprise workflows, RAG is no longer optional — it's the foundation for systems that are accurate, trustworthy, and continuously current.</p>
+
+  <p class="reveal">Start with a focused use case: an internal Q&A system, a customer support bot, or a document analysis tool. Choose an embedding model, spin up a vector database, wire in your LLM of choice, and iterate on retrieval quality using RAGAS metrics. The ecosystem is mature, the tooling is excellent, and the value is immediate.</p>
+
+  <div class="callout reveal">
+    <div class="callout-title">🚀 Yobitel Recommended Stack — 2026</div>
+    <p><strong>Orchestration Frameworks:</strong> LangChain · LlamaIndex · Haystack · DSPy</p>
+    <p><strong>Vector Databases:</strong> Pinecone · Weaviate · Chroma · pgvector · Qdrant</p>
+    <p><strong>Embedding Models:</strong> OpenAI text-embedding-3-large · Cohere embed-v3 · BGE-M3</p>
+    <p><strong>LLMs:</strong> GPT-4o · Claude 3.5 Sonnet · Gemini 1.5 Pro · Llama 3.1 · Mistral</p>
+    <p><strong>Evaluation Tools:</strong> RAGAS · TruLens · UpTrain · DeepEval</p>
+  </div>
+
+</main>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-sticky">
+
+    <div class="sw">
+      <div class="sw-head">Table of Contents</div>
+      <div class="sw-body">
+        <ul class="toc">
+          <li><a href="#section-what">What is RAG?</a></li>
+          <li><a href="#section-arch">Architecture</a></li>
+          <li><a href="#section-usecases">Use Cases</a></li>
+          <li><a href="#section-llm">RAG + LLM</a></li>
+          <li><a href="#section-metrics">Evaluation Metrics</a></li>
+          <li><a href="#section-start">Getting Started</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sw">
+      <div class="sw-head">Quick Facts</div>
+      <div class="sw-body">
+        <div class="sw-facts">
+          <div class="sw-fact"><strong>Introduced</strong><span>Meta AI Research, 2020</span></div>
+          <div class="sw-fact"><strong>Core components</strong><span>Retriever + Generator</span></div>
+          <div class="sw-fact"><strong>Best for</strong><span>Enterprise knowledge, Q&A, compliance</span></div>
+          <div class="sw-fact"><strong>Update cost vs FT</strong><span>~100× cheaper</span></div>
+          <div class="sw-fact"><strong>Published by</strong><span>Yobitel — 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sw">
+      <div class="sw-head">Key Concepts</div>
+      <div class="sw-body">
+        <div class="sw-tags">
+          <span class="sw-tag">Embeddings</span>
+          <span class="sw-tag">Vector DB</span>
+          <span class="sw-tag">Chunking</span>
+          <span class="sw-tag">ANN Search</span>
+          <span class="sw-tag">LLM</span>
+          <span class="sw-tag">RAGAS</span>
+          <span class="sw-tag">Agentic RAG</span>
+          <span class="sw-tag">Graph RAG</span>
+          <span class="sw-tag">Grounding</span>
+          <span class="sw-tag">Hallucination</span>
+          <span class="sw-tag">LangChain</span>
+          <span class="sw-tag">GPT-4o</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sw" style="background:#111110; border-color:#222;">
+      <div class="sw-head" style="background:var(--red);">RAG Readiness Checklist</div>
+      <div class="sw-body">
+        <ul class="checklist">
+          <li><input type="checkbox"> Define knowledge corpus</li>
+          <li><input type="checkbox"> Choose embedding model</li>
+          <li><input type="checkbox"> Set up vector database</li>
+          <li><input type="checkbox"> Design chunking strategy</li>
+          <li><input type="checkbox"> Select LLM provider</li>
+          <li><input type="checkbox"> Define evaluation metrics</li>
+          <li><input type="checkbox"> Plan update cadence</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</aside>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="footer-brand">Yobi<em>tel</em></div>
+  <div class="footer-sub">AI/ML Technical Review · 2026 Edition</div>
+  <div class="footer-copy">© 2026 Yobitel · All content for educational purposes · Sources: Meta AI Research, RAGAS, LangChain, industry reports</div>
+</footer>
+
+<script>
+// ── READING PROGRESS BAR ──
+const bar = document.getElementById('progress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (window.scrollY / (h.scrollHeight - h.clientHeight)) * 100;
+  bar.style.width = pct + '%';
+});
+
+// ── MOBILE NAV TOGGLE (NO external links) ──
+document.getElementById('menuToggle').addEventListener('click', () => {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+// ── CLOSE MOBILE NAV ON LINK CLICK ──
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+
+// ── ACTIVE NAV LINK ON SCROLL ──
+const sections = ['section-what','section-arch','section-usecases','section-llm','section-metrics','section-start'];
+const navAs = document.querySelectorAll('.nav-links a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.getBoundingClientRect().top + window.scrollY - 100) {
+      current = id;
+    }
+  });
+  navAs.forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+  });
+}, { passive: true });
+
+// ── SCROLL REVEAL ──
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(r => io.observe(r));
+</script>
+
+</body>
+</html>
